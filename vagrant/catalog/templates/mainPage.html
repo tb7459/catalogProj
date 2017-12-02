@@ -1,0 +1,59 @@
+<html>
+
+<head>
+    <link rel=stylesheet type=text/css href="{{ url_for('static', filename='styles.css') }}">
+    <title>Library</title>
+    <div align="right">
+        <p>
+            <a href="{{url_for('gdisconnect')}}">
+                <button name="log" class="logbtn">Logout</button>
+            </a>
+        </p>
+    </div>
+    <h1 align="center">Tim's Library</h1> {% if genreId == 0 %}
+    <h2 align="center">Last 10 Books added</h2> {% endif %} {% if genreId > 0 %}
+    <h2 align="center"><b>{{genSel.genre}}</b> <a href="{{url_for('editGenre', genreId = genSel.id)}}">(edit)</a></h2> {% endif %}
+
+</head>
+
+<body class="mainBody">
+    <div class="menuDiv absolute">
+        <p>
+            <a href="{{url_for('bookListStart')}}">
+                <button name="genreBtn" class="btn">HOME</button>
+                <a></br>
+                    </br>
+                    {% for g in genres %}
+                    <a href="{{url_for('genre',genre_id = g.id)}}">
+                        <button name="genreBtn" class="btn">{{g.genre}}</button>
+                    </a>
+                    </br>
+                    {% endfor %}
+                    </br>
+                    <a href="{{url_for('addNewGenre')}}">
+                        <button name="newGen" class="btn">ADD GENRE</button>
+                    </a>
+                    </br>
+                    <a href="{{url_for('addNewBook',genreId=genreId)}}">
+                        <button name="newbkBtn" class="btn">Add new book</button>
+                    </a>
+        </p>
+    </div>
+    <div align="center">
+        {% for b in books %}
+        <div>
+            <a href="{{url_for('updBook',genreId=genreId,bookId=b.id)}}">
+                <img src="{{url_for('static',filename=b.cover_art)}}" title="{{b.title}}">
+            </a>
+            <p> <b>Owner: {{b.uName}}</br>
+	       Author: {{b.aName}}</br>
+	       {{b.synopsis}}</b></p>
+            ______________________________________________________________________________________</br>
+            </br>
+
+        </div>
+        {% endfor %}
+    </div>
+</body>
+
+</html>

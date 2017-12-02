@@ -1,0 +1,15 @@
+<html>
+
+<head>
+    <link rel=stylesheet type=text/css href="{{ url_for('static', filename='styles.css') }}">
+</head>
+
+<body class="updBody">
+    <form name="authorForm" action="{{url_for('addNewAuthor',genreId=genreId)}}" method='POST'>
+        Author:
+        <input type="text" name="name" size="10">
+        <input type="submit" name="AddAuthor" value="Add">
+    </form>
+</body>
+
+</html>

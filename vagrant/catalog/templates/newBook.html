@@ -1,0 +1,38 @@
+<html>
+
+<head>
+    <link rel=stylesheet type=text/css href="{{ url_for('static', filename='styles.css') }}">
+</head>
+
+<body class="updBody">
+    <form name="bookForm" action="{{url_for('addNewBook',genreId=genre_id)}}" method='POST'>
+        Title:
+        <input type="text" name="title" size="30">
+        </br>
+        </br>
+        Genre:
+        <select name="genre">
+            {% for g in genres %}
+            <option value="{{g.id}}" {% if g.id==g enre_id %} SELECTED {% endif %}>{{g.genre}}</option>
+            {% endfor %}
+        </select>
+        </br>
+        </br>
+        Author:
+        <select name="author">
+            {% for a in authors %}
+            <option value="{{a.id}}">{{a.name}}</option>
+            {% endfor %}
+        </select><a href="{{url_for('addNewAuthor',genreId=genre_id)}}">Add new Author</a>
+        <br></br>
+        Synopsis:
+        <input type="text" name="syn" size="100">
+        <br></br>
+        Cover:
+        <input type="text" name="coverArt" size="100">(must be .jpg)
+        <br></br>
+        <input type="submit" name="AddBook" value="Add">
+    </form>
+</body>
+
+</html>

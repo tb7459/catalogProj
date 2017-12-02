@@ -1,0 +1,15 @@
+<html>
+
+<head>
+
+</head>
+
+<body class="updBody">
+    <form name="bookForm" action="{{url_for('delBook',genreId=genre_id,bookId=book.id)}}" method='POST'>
+        Do you Really want to Delete this book?
+        <input type="submit" name="delBook" value="Yes">
+        <input type="submit" name="delBook" value="No">
+    </form>
+</body>
+
+</html>

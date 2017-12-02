@@ -1,0 +1,49 @@
+<html>
+
+<head>
+    <link rel=stylesheet type=text/css href="{{ url_for('static', filename='styles.css') }}">
+    <title>Library</title>
+    <div align="right">
+        <p>
+            <a href="{{url_for('showLogin')}}">
+                <button name="log" class="logbtn">Login</button>
+            </a>
+        </p>
+    </div>
+    <h1 align="center">Tim's Library</h1> {% if genreId == 0 %}
+    <h2 align="center">Last 10 Books added</h2> {% endif %} {% if genreId > 0 %}
+    <h2 align="center">{{genSel.genre}}</h2> {% endif %}
+
+</head>
+
+<body class="mainBody">
+    <div class="menuDiv absolute">
+        <p>
+            <a href="{{url_for('bookListStart')}}">
+                <button name="genreBtn" class="btn">HOME</button>
+                <a></br>
+                    </br>
+                    {% for g in genres %}
+                    <a href="{{url_for('genre',genre_id = g.id)}}">
+                        <button name="genreBtn" class="btn">{{g.genre}}</button>
+                    </a>
+                    </br>
+                    {% endfor %}
+                    </br>
+        </p>
+    </div>
+    <div align="center">
+        {% for b in books %}
+        <div>
+            <img src="{{url_for('static',filename=b.cover_art)}}" title="{{b.title}}">
+            <p><b>Author: {{b.aName}}</br>
+	   {{b.synopsis}}</b></p>
+        </div>
+        ______________________________________________________________________________________</br>
+        </br>
+        {% endfor %}
+    </div>
+    </br>
+</body>
+
+</html>

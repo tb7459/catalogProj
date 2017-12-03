@@ -14,7 +14,7 @@
         Genre:
         <select name="genre">
             {% for g in genres %}
-            <option value="{{g.id}}" {% if g.id==g enre_id %} SELECTED {% endif %}>{{g.genre}}</option>
+            <option value="{{g.id}}" {% if g.id == genre_id %} SELECTED {% endif %}>{{g.genre}}</option>
             {% endfor %}
         </select>
         </br>
@@ -24,7 +24,7 @@
             {% for a in authors %}
             <option value="{{a.id}}">{{a.name}}</option>
             {% endfor %}
-        </select><a href="{{url_for('addNewAuthor',genreId=genre_id)}}">Add new Author</a>
+	</select><a href="{{url_for('addNewAuthor',genreId=genre_id)}}"><font color="black">Add new Author</font></a>
         <br></br>
         Synopsis:
         <input type="text" name="syn" size="100">

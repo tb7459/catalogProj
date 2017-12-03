@@ -245,8 +245,20 @@ def genre(genre_id):
 
 @app.route('/library/editGenre/<int:genreId>', methods=['GET', 'POST'])
 def editGenre(genreId):
+    if 'username' not in login_session:
+        return redirect('/login')
+
     genre = session.query(Genre).filter_by(id=genreId).one()
     books = session.query(Books).filter_by(genre_id=genreId).all()
+
+    if login_session['user_id'] != genre.user_id:
+
+        returnVal = "<script>function myFunction(){"
+        returnVal += "alert('You are not authorized to edit this genre."
+        returnVal += "Please create your own genre entry in order to edit"
+        returnVal += "items.');}</script><body onload='myFunction()'>"
+
+        return returnVal
 
     if request.method == 'POST':
         if request.form['edGenre'] == 'Update':
@@ -266,8 +278,11 @@ def editGenre(genreId):
 
 @app.route('/library/addGenre/', methods=['GET', 'POST'])
 def addNewGenre():
+    if 'username' not in login_session:
+        return redirect('/login')
+
     if request.method == 'POST':
-        newGenre = Genre(genre=request.form['genre'])
+        newGenre = Genre(genre=request.form['genre'], user_id=login_session['user_id'])
         session.add(newGenre)
         session.commit()
         return redirect(url_for('bookListStart'))
@@ -277,6 +292,9 @@ def addNewGenre():
 
 @app.route('/library/addBook/<int:genreId>', methods=['GET', 'POST'])
 def addNewBook(genreId):
+    if 'username' not in login_session:
+        return redirect('/login')
+
     if request.method == 'POST':
         artURL = request.form['coverArt']
         r = requests.get(artURL,  allow_redirects=True)
@@ -312,6 +330,7 @@ def addNewBook(genreId):
 def delBook(genreId, bookId):
     if 'username' not in login_session:
         return redirect('/login')
+
     genres = session.query(Genre).all()
     authors = session.query(Authors).all()
     book = session.query(Books).filter_by(id=bookId).one()
@@ -344,6 +363,9 @@ def delBook(genreId, bookId):
 @app.route('/library/updBook/<int:genreId>/<int:bookId>',
            methods=['GET',  'POST'])
 def updBook(genreId, bookId):
+    if 'username' not in login_session:
+        return redirect('/login')
+
     genres = session.query(Genre).all()
     authors = session.query(Authors).all()
     book = session.query(Books).filter_by(id=bookId).one()
@@ -392,9 +414,11 @@ def updBook(genreId, bookId):
 
 @app.route('/library/addAuthor/<int:genreId>',  methods=['GET', 'POST'])
 def addNewAuthor(genreId):
+    if 'username' not in login_session:
+        return redirect('/login')
 
     if request.method == 'POST':
-        newAuthor = Authors(name=request.form['name'])
+        newAuthor = Authors(name=request.form['name'], user_id=login_session['user_id'])
         session.add(newAuthor)
         session.commit()
         return redirect(url_for('addNewBook', genreId=genreId))

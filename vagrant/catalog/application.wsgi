@@ -1,11 +1,10 @@
 import sys
 sys.path.append('/var/www/html')
-import os
 from flask import Flask,  render_template,  request
 from flask import redirect,  url_for,  flash,  jsonify
-from sqlalchemy import create_engine, func
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from database_setup import Base,  Genre,  Books,  Authors,  LibraryUsers
+from database_setup import Base,  Genre,  Books,  Authors,  User
 from flask import session as login_session
 import random
 import string
@@ -21,7 +20,7 @@ application = Flask(__name__)
 application.secret_key = 'super_secret_key'
 application.debug = True
 
-engine = create_engine('postgresql+psycopg2://catalog:catalog2@35.171.4.160/libbooks')
+engine = create_engine('postgresql+psycopg2://catalog:catalog2@35.171.4.160/library')
 Base.metadata.bind = engine
 
 DBSession = sessionmaker(bind=engine)
@@ -30,7 +29,7 @@ session = DBSession()
 CLIENT_ID = json.loads(
             open('/var/www/html/client_secrets.json',  'r').read()
             )['web']['client_id']
-APPLICATION_NAME = "RestaurantMenuApp"
+APPLICATION_NAME = "MyLibrary"
 
 
 @application.route('/library/<int:bookId>/JSON')
@@ -38,12 +37,12 @@ def bookJSON(bookId):
     bookQ = session.query(Books).filter_by(id=bookId).one()
     book =  session.query(Books).filter_by(id=bookId).all()
     author = session.query(Authors).filter_by(id=bookQ.author_id).all()
-    user = session.query(LibraryUsers).filter_by(id=bookQ.user_id).all()
+    user = session.query(User).filter_by(id=bookQ.user_id).all()
     genre = session.query(Genre).filter_by(id=bookQ.genre_id).all()
 
     return jsonify(bookInfo=[i.serialize for i in book],
                    authorInfo=[j.serialize for j in author],
-                   userInfo=[k.serialize for k in libraryusers],
+                   userInfo=[k.serialize for k in user],
                    genreInfo=[l.serialize for l in genre])
 
 
@@ -51,90 +50,8 @@ def bookJSON(bookId):
 def showLogin():
     state = ''.join(random.choice(string.ascii_uppercase + string.digits)
                     for x in xrange(32))
-    login_session['state'] = state 
+    #login_session['state'] = state 
     return render_template('login.html',STATE=state)
-
-
-@application.route('/fbconnect', methods=['POST'])
-def fbconnect():
-    if request.args.get('state') != login_session['state']:
-        response = make_response(json.dumps('Invalid state parameter.'), 401)
-        response.headers['Content-Type'] = 'application/json'
-        return response
-    access_token = request.data
-    print "access token received %s " % access_token
-
-
-    app_id = json.loads(open('/var/www/html/fb_client_secrets.json', 'r').read())[
-        'web']['app_id']
-    app_secret = json.loads(
-        open('/var/www/html/fb_client_secrets.json', 'r').read())['web']['app_secret']
-    url = 'https://graph.facebook.com/oauth/access_token?grant_type=fb_exchange_token&client_id=%s&client_secret=%s&fb_exchange_token=%s' % (
-        app_id, app_secret, access_token)
-    h = httplib2.Http()
-    result = h.request(url, 'GET')[1]
-
-
-    # Use token to get user info from API
-    userinfo_url = "https://graph.facebook.com/v2.8/me"
-    '''
-        Due to the formatting for the result from the server token exchange we have to
-        split the token first on commas and select the first index which gives us the key : value
-        for the server access token then we split it on colons to pull out the actual token value
-        and replace the remaining quotes with nothing so that it can be used directly in the graph
-        api calls
-    '''
-    token = result.split(',')[0].split(':')[1].replace('"', '')
-
-    url = 'https://graph.facebook.com/v2.8/me?access_token=%s&fields=name,id,email' % token
-    h = httplib2.Http()
-    result = h.request(url, 'GET')[1]
-
-    # print "url sent for API access:%s"% url
-    # print "API JSON result: %s" % result
-    data = json.loads(result)
-    login_session['provider'] = 'facebook'
-    login_session['username'] = data["name"]
-    login_session['email'] = data["email"]
-    login_session['facebook_id'] = data["id"]
-
-    # The token must be stored in the login_session in order to properly logout
-    login_session['access_token'] = token
-
-    # Get user picture
-    url = 'https://graph.facebook.com/v2.8/me/picture?access_token=%s&redirect=0&height=200&width=200' % token
-    h = httplib2.Http()
-    result = h.request(url, 'GET')[1]
-    data = json.loads(result)
-
-    login_session['picture'] = data["data"]["url"]
-
-    # see if user exists
-    output = ''
-    user_id = getUserID(login_session['email'])
-
-    if not user_id:
-        user_id = createUser(login_session)
-    login_session['user_id'] = user_id
-    
-    output += '<h1>Welcome, '
-    output += login_session['username']
-    if user_id:
-        output += ' user_id: '  + str(user_id )
-    output += '</h1>'
-
-    return output
-
-
-@application.route('/fbdisconnect')
-def fbdisconnect():
-    facebook_id = login_session['facebook_id']
-    # The access token must me included to successfully logout
-    access_token = login_session['access_token']
-    url = 'https://graph.facebook.com/%s/permissions?access_token=%s' % (facebook_id,access_token)
-    h = httplib2.Http()
-    result = h.request(url, 'DELETE')[1]
-    return "you have been logged out"
 
 
 @application.route('/gconnect',  methods=['POST'])
@@ -229,29 +146,27 @@ def gconnect():
     print "done!"
     return output
 
-# Users Helper Functions
+# User Helper Functions
 
 
 def createUser(login_session):
-
-    newUser = LibraryUsers(name=login_session['username'],  
-                   email=login_session['email'], 
-                   picture=login_session['picture'])
+    newUser = User(name=login_session['username'],  email=login_session[
+                   'email'],  picture=login_session['picture'])
     session.add(newUser)
     session.commit()
-    user = session.query(LibraryUsers).filter_by(email=login_session['email']).one()
+    user = session.query(User).filter_by(email=login_session['email']).one()
     return user.id
 
 
 def getUserInfo(user_id):
-    user = session.query(LibraryUsers).filter_by(id=user_id).one()
+    user = session.query(User).filter_by(id=user_id).one()
     return user
 
 
 def getUserID(email):
     try:
-        user = session.query(LibraryUsers).filter_by(email=email).one()
-        return user.id 
+        user = session.query(User).filter_by(email=email).one()
+        return user.id
     except:
         return None
 
@@ -296,9 +211,9 @@ def bookListStart():
     genres = session.query(Genre).all()
     allBooks = session.query(Books.id, Books.title, Books.cover_art,
                              Books.synopsis, Books.genre_id, Books.author_id,
-                             LibraryUsers.name.label("uName"),
+                             User.name.label("uName"),
                              Authors.name.label("aName")).filter(
-                                     Books.user_id == LibraryUsers.id,
+                                     Books.user_id == User.id,
                                      Books.author_id ==
                                      Authors.id).order_by(
                                      Books.id.desc()).limit(10).all()
@@ -318,9 +233,9 @@ def genre(genre_id):
     genSel = session.query(Genre).filter_by(id=genre_id).one()
     genBooks = session.query(Books.id, Books.title, Books.synopsis,
                              Books.cover_art, Books.genre_id,
-                             LibraryUsers.name.label("uName"),
+                             User.name.label("uName"),
                              Authors.name.label("aName")).filter(
-                                     Books.user_id == LibraryUsers.id,
+                                     Books.user_id == User.id,
                                      Books.author_id == Authors.id,
                                      Books.genre_id == genre_id).all()
     if 'username' not in login_session:
@@ -371,14 +286,12 @@ def addNewGenre():
         return redirect('/login')
 
     if request.method == 'POST':
-        nGenId = session.query(func.max(Genre.id)).scalar()
-        nGenId += 1
-        newGenre = Genre(id=nGenId,genre=request.form['genre'], user_id=login_session['user_id'])
+        newGenre = Genre(genre=request.form['genre'], user_id=login_session['user_id'])
         session.add(newGenre)
         session.commit()
         return redirect(url_for('bookListStart'))
     else:
-        return render_template('newGenre.html',  genre_id=0)
+        return render_template('newgenre.html',  genre_id=0)
 
 
 @application.route('/library/addBook/<int:genreId>', methods=['GET', 'POST'])
@@ -389,7 +302,7 @@ def addNewBook(genreId):
     if request.method == 'POST':
         artURL = request.form['coverArt']
         r = requests.get(artURL,  allow_redirects=True)
-        fileName = "/var/www/html/static/"
+        fileName = "static/"
         fileName += request.form['title']
         fileName += ".jpg"
 
@@ -397,11 +310,9 @@ def addNewBook(genreId):
         fileName = fileName.replace("'", "")
 
         open(fileName, 'wb').write(r.content)
-        os.chmod(fileName,0777)
-        fileName = fileName.replace('/var/www/html/static/', '')
-        nBookId = session.query(func.max(Books.id)).scalar()
-        nBookId +=1
-        newBook = Books(id=nBookId,title=request.form['title'],
+        fileName = fileName.replace('static/', '')
+
+        newBook = Books(title=request.form['title'],
                         genre_id=request.form['genre'],
                         author_id=request.form['author'],
                         synopsis=request.form['syn'],
@@ -473,6 +384,18 @@ def updBook(genreId, bookId):
         return returnVal
 
     if request.method == 'POST':
+        if book.cover_art != request.form['cover_art']:
+            artURL = request.form['cover_art']
+            r = requests.get(artURL,  allow_redirects=True)
+            fileName = "static/"
+            fileName += request.form['title']
+            fileName += ".jpg"
+
+            fileName = fileName.replace(' ', '')
+            fileName = fileName.replace("'", "")
+
+            open(fileName, 'wb').write(r.content)
+            fileName = fileName.replace('static/', '')
 
         if request.form['title']:
             book.title = request.form['title']
@@ -482,6 +405,8 @@ def updBook(genreId, bookId):
             book.author_id = request.form['author']
         if request.form['syn']:
             book.synopsis = request.form['syn']
+        if request.form['cover_art']:
+            book.cover_art = fileName
 
         session.add(book)
         session.commit()
@@ -497,9 +422,7 @@ def addNewAuthor(genreId):
         return redirect('/login')
 
     if request.method == 'POST':
-        nAutId = session.query(func.max(Authors.id)).scalar()
-        nAutId += 1
-        newAuthor = Authors(id=nAutId,name=request.form['name'], user_id=login_session['user_id'])
+        newAuthor = Authors(name=request.form['name'], user_id=login_session['user_id'])
         session.add(newAuthor)
         session.commit()
         return redirect(url_for('addNewBook', genreId=genreId))

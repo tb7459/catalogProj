@@ -7,8 +7,8 @@ from sqlalchemy import create_engine
 Base = declarative_base()
 
 
-class User(Base):
-    __tablename__ = 'user'
+class LibraryUsers(Base):
+    __tablename__ = 'libraryusers'
 
     id = Column(Integer, primary_key=True)
     name = Column(String(250), nullable=False)
@@ -27,8 +27,8 @@ class Genre(Base):
 
     id = Column(Integer, primary_key=True)
     genre = Column(String(80), nullable=False)
-    user_id = Column(Integer, ForeignKey('user.id'))
-    user = relationship(User)
+    user_id = Column(Integer, ForeignKey('libraryusers.id'))
+    libraryusers = relationship(LibraryUsers)
 
     @property
     def serialize(self):
@@ -42,8 +42,8 @@ class Authors(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String(80), nullable=False)
-    user_id = Column(Integer, ForeignKey('user.id'))
-    user = relationship(User)
+    user_id = Column(Integer, ForeignKey('libraryusers.id'))
+    libraryusers = relationship(LibraryUsers)
 
     @property
     def serialize(self):
@@ -66,8 +66,8 @@ class Books(Base):
     author_id = Column(Integer, ForeignKey('authors.id'))
     authors = relationship(Authors)
 
-    user_id = Column(Integer, ForeignKey('user.id'))
-    user = relationship(User)
+    user_id = Column(Integer, ForeignKey('libraryusers.id'))
+    libraryusers = relationship(LibraryUsers)
 
     @property
     def serialize(self):
@@ -78,5 +78,5 @@ class Books(Base):
 
 
 # insert at end of file #
-engine = create_engine('sqlite:///bookslibrary.db')
+engine = create_engine('postgresql+psycopg2://catalog:catalog2@35.171.4.160/libbooks')
 Base.metadata.create_all(engine)

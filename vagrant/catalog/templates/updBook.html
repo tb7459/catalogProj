@@ -29,13 +29,12 @@
         Synopsis:
         <input type="text" name="syn" value="{{book.synopsis}}" size="100">
         <br></br>
-        Cover art:
-        <input type="text" name="cover_art" value="{{book.cover_art}}" size="100">
+        Cover art:   <font color="white">{{ book.cover_art }}</font>
         </br>
         </br>
-        <button name="back"><a href="{{url_for('bookListStart')}}">Back</a></button>
+        <a href="{{url_for('bookListStart')}}"><font color="white">Back</font></a>
         <input type="submit" name="updBook" value="Update">
-        <button name="delbook"><a href="{{url_for('delBook',genreId=book.genre_id, bookId = book.id)}}">Delete</a></button>
+        <a href="{{ url_for('delBook',genreId=book.genre_id, bookId = book.id )}}"><font color="white">Delete</font></a>
     </form>
 </body>
 

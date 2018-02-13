@@ -1,9 +1,9 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from database_setup import User, Base, Authors, Genre, Books
+from database_setup import LibraryUsers, Base, Authors, Genre, Books
 
-engine = create_engine('sqlite:///bookslibrary.db')
+engine = create_engine('postgresql+psycopg2://catalog:catalog2@35.171.4.160/libbooks')
 # Bind the engine to the metadata of the Base class so that the
 # declaratives can be accessed through a DBSession instance
 Base.metadata.bind = engine
@@ -20,7 +20,7 @@ session = DBSession()
 
 
 # First user
-user1 = User(id=1,
+user1 = LibraryUsers(id=1,
              name="Tim Brown",
              email="tb7459@att.com",
              picture="")
